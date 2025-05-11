@@ -7,10 +7,13 @@
         baseCapacity: number;
         dayOverrides: Record<string, number | null>;
         dateOverrides: { startDate: string; endDate: string; capacity: number }[];
+        channelOverrides: Record<string, { dayOverrides: Record<string, number | null>; dateOverrides: { startDate: string; endDate: string; percentage: number }[] }>;
         error?: string;
     } | null = null;
 
     const allDays = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const channels = ['Channel 1', 'Channel 2'];
+    let expandedChannel: string | null = null;
     let errorMessage = '';
 
     // Fetch store details on mount
@@ -21,35 +24,67 @@
         if (response.ok) {
             storeData = await response.json();
 
-            // Ensure all days are initialized in dayOverrides
+            // Initialize dayOverrides and channelOverrides
             storeData.dayOverrides = storeData.dayOverrides || {};
             allDays.forEach((day) => {
                 if (!(day in storeData.dayOverrides)) {
-                    storeData.dayOverrides[day] = null; // Default to "No Override"
+                    storeData.dayOverrides[day] = null;
                 }
+            });
+
+            storeData.channelOverrides = storeData.channelOverrides || {};
+            channels.forEach((channel) => {
+                if (!storeData.channelOverrides[channel]) {
+                    storeData.channelOverrides[channel] = {
+                        dayOverrides: {},
+                        dateOverrides: []
+                    };
+                }
+                allDays.forEach((day) => {
+                    if (!(day in storeData.channelOverrides[channel].dayOverrides)) {
+                        storeData.channelOverrides[channel].dayOverrides[day] = null;
+                    }
+                });
             });
         } else {
             storeData = { error: 'Store data not found.' };
         }
     });
 
-        function addDateOverride() {
-            if (storeData) {
-                storeData.dateOverrides = [
-                    ...storeData.dateOverrides,
-                    { startDate: '', endDate: '', capacity: 0 }
-                ];
-            }
-        }
+    function toggleAccordion(channel: string) {
+        expandedChannel = expandedChannel === channel ? null : channel;
+    }
 
-    // Remove a date override
+    function addDateOverride() {
+        if (storeData) {
+            storeData.dateOverrides = [
+                ...storeData.dateOverrides,
+                { startDate: '', endDate: '', capacity: 0 }
+            ];
+        }
+    }
+
     function removeDateOverride(index: number) {
         if (storeData) {
             storeData.dateOverrides = storeData.dateOverrides.filter((_, i) => i !== index);
         }
     }
 
-    // Validate for conflicting date ranges
+    function addChannelDateOverride(channel: string) {
+        if (storeData) {
+            storeData.channelOverrides[channel].dateOverrides = [
+                ...storeData.channelOverrides[channel].dateOverrides,
+                { startDate: '', endDate: '', percentage: 0 }
+            ];
+        }
+    }
+
+    function removeChannelDateOverride(channel: string, index: number) {
+        if (storeData) {
+            storeData.channelOverrides[channel].dateOverrides = storeData.channelOverrides[channel].dateOverrides.filter((_, i) => i !== index);
+        }
+    }
+
     function validateDateOverrides() {
         if (!storeData) return true;
 
@@ -74,7 +109,6 @@
         return true;
     }
 
-    // Save updated data
     async function saveData() {
         if (!validateDateOverrides()) {
             alert(errorMessage);
@@ -174,6 +208,94 @@
             >
                 Add Date Override
             </button>
+
+            <h2 class="text-xl font-semibold mt-6">Manage Maximum Consumable Capacity per Channel</h2>
+            {#each channels as channel}
+                <div class="border rounded mb-4">
+                    <div
+                            class="bg-gray-200 p-4 cursor-pointer"
+                            on:click={() => toggleAccordion(channel)}
+                    >
+                        <h3 class="text-lg font-semibold">{channel}</h3>
+                    </div>
+                    {#if expandedChannel === channel}
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold mt-4">Day Overrides:</h3>
+                            <ul>
+                                {#each allDays as day}
+                                    <li>
+                                        {day}:
+                                        {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
+                                            <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="100"
+                                                    bind:value={storeData.channelOverrides[channel].dayOverrides[day]}
+                                                    class="border p-2 rounded"
+                                            />
+                                            %
+                                            <button
+                                                    class="bg-red-500 text-white px-2 py-1 rounded ml-2"
+                                                    on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = null)}
+                                            >
+                                                Remove
+                                            </button>
+                                        {:else}
+                                            <span>No Override</span>
+                                            <button
+                                                    class="bg-blue-500 text-white px-2 py-1 rounded ml-2"
+                                                    on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = 0)}
+                                            >
+                                                Add Override
+                                            </button>
+                                        {/if}
+                                    </li>
+                                {/each}
+                            </ul>
+
+                            <h3 class="text-lg font-semibold mt-4">Date Overrides:</h3>
+                            <ul>
+                                {#each storeData.channelOverrides[channel].dateOverrides as override, index}
+                                    <li>
+                                        <input
+                                                type="date"
+                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].startDate}
+                                                class="border p-2 rounded"
+                                        />
+                                        -
+                                        <input
+                                                type="date"
+                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].endDate}
+                                                class="border p-2 rounded"
+                                        />
+                                        Percentage:
+                                        <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].percentage}
+                                                class="border p-2 rounded"
+                                        />
+                                        %
+                                        <button
+                                                class="bg-red-500 text-white px-2 py-1 rounded ml-2"
+                                                on:click={() => removeChannelDateOverride(channel, index)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </li>
+                                {/each}
+                            </ul>
+                            <button
+                                    class="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+                                    on:click={() => addChannelDateOverride(channel)}
+                            >
+                                Add Date Override
+                            </button>
+                        </div>
+                    {/if}
+                </div>
+            {/each}
 
             {#if errorMessage}
                 <p class="text-red-500 mt-2">{errorMessage}</p>
