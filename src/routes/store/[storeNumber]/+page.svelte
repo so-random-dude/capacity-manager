@@ -129,186 +129,109 @@
     }
 </script>
 
-<div class="p-4">
-    <h1 class="text-2xl font-bold mb-4">Store Details: {storeNumber}</h1>
+<div class="container mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-6">Store Details: {storeNumber}</h1>
 
     {#if storeData}
         {#if storeData.error}
-            <p class="text-red-500">{storeData.error}</p>
+            <div class="bg-red-100 text-red-700 p-4 rounded mb-4">{storeData.error}</div>
         {:else}
-            <h2 class="text-xl font-semibold">Labor Capacity</h2>
-            <label class="block mt-2">
-                Base Capacity:
-                <input type="number" bind:value={storeData.baseCapacity} class="border p-2 rounded w-full" />
-            </label>
+            <section class="bg-white p-6 rounded-lg shadow mb-8">
+                <h2 class="text-2xl font-semibold mb-4">Labor Capacity</h2>
 
-            <h3 class="text-lg font-semibold mt-4">Day Overrides:</h3>
-            <ul>
-                {#each allDays as day}
-                    <li>
-                        {day}:
-                        {#if storeData.dayOverrides[day] !== null}
-                            <input
-                                    type="number"
-                                    bind:value={storeData.dayOverrides[day]}
-                                    class="border p-2 rounded"
-                            />
-                            <button
-                                    class="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                                    on:click={() => (storeData.dayOverrides[day] = null)}
-                            >
-                                Remove
-                            </button>
-                        {:else}
-                            <span>No Override</span>
-                            <button
-                                    class="bg-blue-500 text-white px-2 py-1 rounded ml-2"
-                                    on:click={() => (storeData.dayOverrides[day] = 0)}
-                            >
-                                Add Override
-                            </button>
-                        {/if}
-                    </li>
-                {/each}
-            </ul>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="block">
+                        <span class="font-medium">Base Capacity:</span>
+                        <input type="number" bind:value={storeData.baseCapacity} class="mt-1 border rounded w-full p-2" />
+                    </label>
 
-            <h3 class="text-lg font-semibold mt-4">Date Overrides:</h3>
-            <ul>
-                {#each storeData.dateOverrides as override, index}
-                    <li>
-                        <input
-                                type="date"
-                                bind:value={storeData.dateOverrides[index].startDate}
-                                class="border p-2 rounded"
-                        />
-                        -
-                        <input
-                                type="date"
-                                bind:value={storeData.dateOverrides[index].endDate}
-                                class="border p-2 rounded"
-                        />
-                        Capacity:
-                        <input
-                                type="number"
-                                bind:value={storeData.dateOverrides[index].capacity}
-                                class="border p-2 rounded"
-                        />
-                        <button
-                                class="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                                on:click={() => removeDateOverride(index)}
-                        >
-                            Delete
-                        </button>
-                    </li>
-                {/each}
-            </ul>
-            <button
-                    class="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                    on:click={addDateOverride}
-            >
-                Add Date Override
-            </button>
-
-            <h2 class="text-xl font-semibold mt-6">Manage Maximum Consumable Capacity per Channel</h2>
-            {#each channels as channel}
-                <div class="border rounded mb-4">
-                    <div
-                            class="bg-gray-200 p-4 cursor-pointer"
-                            on:click={() => toggleAccordion(channel)}
-                    >
-                        <h3 class="text-lg font-semibold">{channel}</h3>
-                    </div>
-                    {#if expandedChannel === channel}
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold mt-4">Day Overrides:</h3>
-                            <ul>
-                                {#each allDays as day}
-                                    <li>
-                                        {day}:
-                                        {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
-                                            <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    bind:value={storeData.channelOverrides[channel].dayOverrides[day]}
-                                                    class="border p-2 rounded"
-                                            />
-                                            %
-                                            <button
-                                                    class="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                                                    on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = null)}
-                                            >
-                                                Remove
-                                            </button>
-                                        {:else}
-                                            <span>No Override</span>
-                                            <button
-                                                    class="bg-blue-500 text-white px-2 py-1 rounded ml-2"
-                                                    on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = 0)}
-                                            >
-                                                Add Override
-                                            </button>
-                                        {/if}
-                                    </li>
-                                {/each}
-                            </ul>
-
-                            <h3 class="text-lg font-semibold mt-4">Date Overrides:</h3>
-                            <ul>
-                                {#each storeData.channelOverrides[channel].dateOverrides as override, index}
-                                    <li>
-                                        <input
-                                                type="date"
-                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].startDate}
-                                                class="border p-2 rounded"
-                                        />
-                                        -
-                                        <input
-                                                type="date"
-                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].endDate}
-                                                class="border p-2 rounded"
-                                        />
-                                        Percentage:
-                                        <input
-                                                type="number"
-                                                min="0"
-                                                max="100"
-                                                bind:value={storeData.channelOverrides[channel].dateOverrides[index].percentage}
-                                                class="border p-2 rounded"
-                                        />
-                                        %
-                                        <button
-                                                class="bg-red-500 text-white px-2 py-1 rounded ml-2"
-                                                on:click={() => removeChannelDateOverride(channel, index)}
-                                        >
-                                            Delete
-                                        </button>
-                                    </li>
-                                {/each}
-                            </ul>
-                            <button
-                                    class="bg-blue-500 text-white px-4 py-2 rounded mt-2"
-                                    on:click={() => addChannelDateOverride(channel)}
-                            >
-                                Add Date Override
-                            </button>
+                    <div>
+                        <h3 class="font-medium mb-2">Day Overrides</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            {#each allDays as day}
+                                <div class="flex items-center justify-between border rounded p-2">
+                                    <span class="capitalize">{day.toLowerCase()}</span>
+                                    {#if storeData.dayOverrides[day] !== null}
+                                        <input type="number" bind:value={storeData.dayOverrides[day]} class="border rounded p-1 w-20" />
+                                        <button class="ml-2 text-red-500" on:click={() => (storeData.dayOverrides[day] = null)}>✕</button>
+                                    {:else}
+                                        <button class="text-blue-500" on:click={() => (storeData.dayOverrides[day] = 0)}>Add</button>
+                                    {/if}
+                                </div>
+                            {/each}
                         </div>
-                    {/if}
+                    </div>
                 </div>
-            {/each}
+
+                <div class="mt-6">
+                    <h3 class="font-medium mb-2">Date Overrides</h3>
+                    {#each storeData.dateOverrides as override, idx}
+                        <div class="flex gap-2 items-center mb-2">
+                            <input type="date" bind:value={override.startDate} class="border rounded p-2" />
+                            <span>to</span>
+                            <input type="date" bind:value={override.endDate} class="border rounded p-2" />
+                            <input type="number" bind:value={override.capacity} class="border rounded p-2 w-24" placeholder="Capacity" />
+                            <button class="text-red-500" on:click={() => removeDateOverride(idx)}>✕</button>
+                        </div>
+                    {/each}
+                    <button class="mt-2 bg-blue-500 text-white py-1 px-3 rounded" on:click={addDateOverride}>Add Date Override</button>
+                </div>
+            </section>
+
+            <section class="bg-white p-6 rounded-lg shadow">
+                <h2 class="text-2xl font-semibold mb-4">Manage Channel Capacities</h2>
+                {#each channels as channel}
+                    <div class="mb-4 border rounded">
+                        <div class="bg-gray-100 p-4 cursor-pointer flex justify-between" on:click={() => toggleAccordion(channel)}>
+                            <span>{channel}</span>
+                            <span>{expandedChannel === channel ? '▲' : '▼'}</span>
+                        </div>
+
+                        {#if expandedChannel === channel}
+                            <div class="p-4">
+                                <div class="mb-4">
+                                    <h4 class="font-medium mb-2">Day Overrides</h4>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        {#each allDays as day}
+                                            <div class="flex items-center justify-between border rounded p-2">
+                                                <span class="capitalize">{day.toLowerCase()}</span>
+                                                {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
+                                                    <input type="number" min="0" max="100" bind:value={storeData.channelOverrides[channel].dayOverrides[day]} class="border rounded p-1 w-20" />
+                                                    <button class="ml-2 text-red-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = null)}>✕</button>
+                                                {:else}
+                                                    <button class="text-blue-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = 0)}>Add</button>
+                                                {/if}
+                                            </div>
+                                        {/each}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium mb-2">Date Overrides</h4>
+                                    {#each storeData.channelOverrides[channel].dateOverrides as override, idx}
+                                        <div class="flex gap-2 items-center mb-2">
+                                            <input type="date" bind:value={override.startDate} class="border rounded p-2" />
+                                            <span>to</span>
+                                            <input type="date" bind:value={override.endDate} class="border rounded p-2" />
+                                            <input type="number" min="0" max="100" bind:value={override.percentage} class="border rounded p-2 w-24" placeholder="%" />
+                                            <button class="text-red-500" on:click={() => removeChannelDateOverride(channel, idx)}>✕</button>
+                                        </div>
+                                    {/each}
+                                    <button class="mt-2 bg-blue-500 text-white py-1 px-3 rounded" on:click={() => addChannelDateOverride(channel)}>Add Date Override</button>
+                                </div>
+                            </div>
+                        {/if}
+                    </div>
+                {/each}
+            </section>
 
             {#if errorMessage}
-                <p class="text-red-500 mt-2">{errorMessage}</p>
+                <div class="mt-4 bg-red-100 text-red-700 p-3 rounded">{errorMessage}</div>
             {/if}
 
-            <button
-                    class="bg-green-500 text-white px-4 py-2 rounded mt-4"
-                    on:click={saveData}
-            >
-                Save
-            </button>
+            <button class="mt-6 bg-green-500 text-white py-2 px-6 rounded" on:click={saveData}>Save Changes</button>
         {/if}
     {:else}
-        <p>Loading...</p>
+        <div class="text-center py-6">Loading...</div>
     {/if}
 </div>
