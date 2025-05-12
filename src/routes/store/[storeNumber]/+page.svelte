@@ -2,6 +2,9 @@
     import { page } from '$app/stores';
     import { onMount } from 'svelte';
 
+    let showOverrides = false;
+    let expandedChannels = [];
+    let channelOverridesVisibility = {};
     let storeNumber: string;
     let storeData: {
         baseCapacity: number;
@@ -139,95 +142,118 @@
             <section class="bg-white p-6 rounded-lg shadow mb-8">
                 <h2 class="text-2xl font-semibold mb-4">Labor Capacity</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="block">
-                        <span class="font-medium">Base Capacity:</span>
-                        <input type="number" bind:value={storeData.baseCapacity} class="mt-1 border rounded w-full p-2" />
-                    </label>
-
-                    <div>
-                        <h3 class="font-medium mb-2">Day Overrides</h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            {#each allDays as day}
-                                <div class="flex items-center justify-between border rounded p-2">
-                                    <span class="capitalize">{day.toLowerCase()}</span>
-                                    {#if storeData.dayOverrides[day] !== null}
-                                        <input type="number" bind:value={storeData.dayOverrides[day]} class="border rounded p-1 w-20" />
-                                        <button class="ml-2 text-red-500" on:click={() => (storeData.dayOverrides[day] = null)}>✕</button>
-                                    {:else}
-                                        <button class="text-blue-500" on:click={() => (storeData.dayOverrides[day] = 0)}>Add</button>
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    </div>
+                <div class="flex items-center gap-4">
+                    <label class="font-medium">Base Capacity:</label>
+                    <input type="number" bind:value={storeData.baseCapacity} class="border rounded p-2 w-32" />
                 </div>
 
                 <div class="mt-6">
-                    <h3 class="font-medium mb-2">Date Overrides</h3>
-                    {#each storeData.dateOverrides as override, idx}
-                        <div class="flex gap-2 items-center mb-2">
-                            <input type="date" bind:value={override.startDate} class="border rounded p-2" />
-                            <span>to</span>
-                            <input type="date" bind:value={override.endDate} class="border rounded p-2" />
-                            <input type="number" bind:value={override.capacity} class="border rounded p-2 w-24" placeholder="Capacity" />
-                            <button class="text-red-500" on:click={() => removeDateOverride(idx)}>✕</button>
-                        </div>
-                    {/each}
-                    <button class="mt-2 bg-blue-500 text-white py-1 px-3 rounded" on:click={addDateOverride}>Add Date Override</button>
+                    {#if Object.values(storeData.dayOverrides).some(value => value !== null)}
+                        <button class="bg-blue-500 text-white py-1 px-3 rounded mb-4" on:click={() => showOverrides = !showOverrides}>
+                            {showOverrides ? "Hide Not Overridden Days" : "Show Not Overridden Days"}
+                        </button>
+
+                        <table class="table-auto text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 ">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 w-32">
+                                    Day
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Capacity
+                                </th>
+                                <th scope="col" class="px-6 py-3">
+                                    Action
+                                </th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {#each allDays as day}
+                                {#if storeData.dayOverrides[day] !== null || showOverrides}
+                                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 border-gray-200">
+                                        <td class="p-2 capitalize">{day.toLowerCase()}</td>
+                                        <td class="p-2">
+                                            {#if storeData.dayOverrides[day] !== null}
+                                                <input type="text" bind:value={storeData.dayOverrides[day]} class="border rounded p-1 w-24" />
+                                            {:else}
+                                                <span class="text-gray-500">No Override</span>
+                                            {/if}
+                                        </td>
+                                        <td class="p-2">
+                                            {#if storeData.dayOverrides[day] !== null}
+                                                <button class="text-red-500" on:click={() => (storeData.dayOverrides[day] = null)}>Remove</button>
+                                            {:else}
+                                                <button class="text-blue-500" on:click={() => (storeData.dayOverrides[day] = 0)}>Add</button>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/if}
+                            {/each}
+                            </tbody>
+                        </table>
+                    {:else}
+                        <button
+                                class="bg-blue-500 text-white py-1 px-3 rounded"
+                                on:click={() => {
+                allDays.forEach(day => storeData.dayOverrides[day] = 0);
+            }}
+                        >
+                            Add DAY Overrides
+                        </button>
+                    {/if}
                 </div>
             </section>
 
             <section class="bg-white p-6 rounded-lg shadow">
                 <h2 class="text-2xl font-semibold mb-4">Manage Channel Capacities</h2>
                 {#each channels as channel}
-                    <div class="mb-4 border rounded">
-                        <div class="bg-gray-100 p-4 cursor-pointer flex justify-between" on:click={() => toggleAccordion(channel)}>
-                            <span>{channel}</span>
-                            <span>{expandedChannel === channel ? '▲' : '▼'}</span>
+                    <div class="mb-4 border rounded p-4">
+                        <h3 class="text-xl font-semibold mb-2">{channel}</h3>
+
+                        <div class="flex items-center gap-4 mb-4">
+                            <label class="font-medium">Max Percentage:</label>
+                            <input type="number" min="0" max="100" bind:value={storeData.channelOverrides[channel].maxPercentage} class="border rounded p-2 w-32" placeholder="%" />
                         </div>
 
-                        {#if expandedChannel === channel}
-                            <div class="p-4">
-                                <div class="mb-4">
-                                    <h4 class="font-medium mb-2">Day Overrides</h4>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        {#each allDays as day}
-                                            <div class="flex items-center justify-between border rounded p-2">
-                                                <span class="capitalize">{day.toLowerCase()}</span>
-                                                {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
-                                                    <input type="number" min="0" max="100" bind:value={storeData.channelOverrides[channel].dayOverrides[day]} class="border rounded p-1 w-20" />
-                                                    <button class="ml-2 text-red-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = null)}>✕</button>
-                                                {:else}
-                                                    <button class="text-blue-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = 0)}>Add</button>
-                                                {/if}
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
+                        <button class="bg-blue-500 text-white py-1 px-3 rounded mb-4" on:click={() => channelOverridesVisibility[channel] = !channelOverridesVisibility[channel]}>
+                            {channelOverridesVisibility[channel] ? "Hide Not Overridden Days" : "Show Not Overridden Days"}
+                        </button>
 
-                                <div>
-                                    <h4 class="font-medium mb-2">Date Overrides</h4>
-                                    {#each storeData.channelOverrides[channel].dateOverrides as override, idx}
-                                        <div class="flex gap-2 items-center mb-2">
-                                            <input type="date" bind:value={override.startDate} class="border rounded p-2" />
-                                            <span>to</span>
-                                            <input type="date" bind:value={override.endDate} class="border rounded p-2" />
-                                            <input type="number" min="0" max="100" bind:value={override.percentage} class="border rounded p-2 w-24" placeholder="%" />
-                                            <button class="text-red-500" on:click={() => removeChannelDateOverride(channel, idx)}>✕</button>
-                                        </div>
-                                    {/each}
-                                    <button class="mt-2 bg-blue-500 text-white py-1 px-3 rounded" on:click={() => addChannelDateOverride(channel)}>Add Date Override</button>
-                                </div>
-                            </div>
-                        {/if}
+                        <table class="table-auto w-full border-collapse">
+                            <thead>
+                            <tr class="bg-gray-100">
+                                <th class="border p-2">Day</th>
+                                <th class="border p-2">Override Percentage</th>
+                                <th class="border p-2">Action</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {#each allDays as day}
+                                {#if storeData.channelOverrides[channel].dayOverrides[day] !== null || channelOverridesVisibility[channel]}
+                                    <tr>
+                                        <td class="border p-2 capitalize">{day.toLowerCase()}</td>
+                                        <td class="border p-2">
+                                            {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
+                                                <input type="number" min="0" max="100" bind:value={storeData.channelOverrides[channel].dayOverrides[day]} class="border rounded p-1 w-24" />
+                                            {:else}
+                                                <span class="text-gray-500">No Override</span>
+                                            {/if}
+                                        </td>
+                                        <td class="border p-2">
+                                            {#if storeData.channelOverrides[channel].dayOverrides[day] !== null}
+                                                <button class="text-red-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = null)}>Remove</button>
+                                            {:else}
+                                                <button class="text-blue-500" on:click={() => (storeData.channelOverrides[channel].dayOverrides[day] = 0)}>Add</button>
+                                            {/if}
+                                        </td>
+                                    </tr>
+                                {/if}
+                            {/each}
+                            </tbody>
+                        </table>
                     </div>
                 {/each}
             </section>
-
-            {#if errorMessage}
-                <div class="mt-4 bg-red-100 text-red-700 p-3 rounded">{errorMessage}</div>
-            {/if}
 
             <button class="mt-6 bg-green-500 text-white py-2 px-6 rounded" on:click={saveData}>Save Changes</button>
         {/if}
@@ -235,3 +261,5 @@
         <div class="text-center py-6">Loading...</div>
     {/if}
 </div>
+
+
